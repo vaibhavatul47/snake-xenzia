@@ -1,0 +1,127 @@
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <time.h>
+
+#define SIZE 51
+#define UP 183
+#define DOWN 184
+#define RIGHT 185
+#define LEFT 186
+
+int scan_keyboard(void);
+void wait();
+int kbhit();
+void move(char);
+int get_new_point(int, char);
+int head = ((SIZE / 2) - 1) * SIZE + (SIZE / 2) + 2;
+int tail = ((SIZE / 2) - 1) * SIZE + (SIZE / 2) - 2;
+int board[SIZE][SIZE];
+
+int main()
+{
+	int i = 0;
+	int j = 0;
+	char direction = 'r';
+	char new_direction;
+	int new_value = 0;
+	int key_pressed = 0;
+
+	// Initialising Board
+	for(i = 0; i < SIZE; i++) {
+		for(j = 0; j < SIZE; j++) {
+			board[i][j] = 0;
+		}
+	}
+	// Initially Snake
+	board[25][27] = 2; // Snake's Head
+	board[25][23] = board[25][24] = board[25][25] = board[25][26] = 1; // Snake's body
+
+	system("stty raw -echo");
+	printf("enter 'q' to quit \n");
+	
+	for (i = 0; (direction != 'q'); i++) {
+		
+		wait();
+		
+		//new_value = 0;
+		if (kbhit()) {
+			//direction = scan_keyboard();
+			key_pressed = scan_keyboard();
+			if(key_pressed == 27) {
+				key_pressed += scan_keyboard();
+				if(key_pressed == 118) {
+					key_pressed += scan_keyboard();
+					if(key_pressed == UP && direction != 'd')
+						direction = 'u';
+					else if(key_pressed == DOWN && direction != 'u')
+						direction = 'd';
+					else if(key_pressed == RIGHT && direction != 'l')
+						direction = 'r';
+					else if(key_pressed == LEFT && direction != 'r')
+						direction = 'l';
+				}
+			}
+			else if (key_pressed == 81 || key_pressed == 113)
+				direction = 'q';
+		}
+		move(direction);	
+	}
+	
+	system("stty cooked echo");
+	return 0;
+}
+
+void move(char ch)
+{
+	printf("\r");
+	if(ch == 'U' || ch == 'u')
+		printf("Up\n");
+	else if (ch == 'D' || ch == 'd')
+		printf("Down\n");
+	else if (ch == 'R' || ch == 'r')
+		printf("Right\n");
+	else if (ch == 'L' || ch == 'l')
+		printf("Left\n");
+	fflush(stdout);
+	return;
+}
+
+int get_new_point(int pos, char dir)
+{
+	int ans = 0;
+
+	return ans;
+}
+
+// Another one!
+int scan_keyboard(void) 
+{
+	struct termios oldstuff;
+	struct termios newstuff;
+	int inch;
+
+	tcgetattr(STDIN_FILENO, &oldstuff);
+	newstuff = oldstuff;                  /* save old attributes               */
+	newstuff.c_lflag &= ~(ICANON | ECHO); /* reset "canonical" and "echo" flags*/
+	tcsetattr(STDIN_FILENO, TCSANOW, &newstuff); /* set new attributes         */
+	inch = getchar();
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldstuff); /* restore old attributes     */
+
+	return inch;
+}
+
+void wait()
+{
+	clock_t now = clock();
+	while((clock() - now) < (0.07 * CLOCKS_PER_SEC));
+	return;
+}
+
+int kbhit()
+{
+	int i;
+	ioctl(0, FIONREAD, &i);
+	return i; /* return a count of chars available to read */
+}
